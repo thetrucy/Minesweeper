@@ -17,8 +17,8 @@ const char* flag = "FLAG";
 int cellHeight = screenHeight / ROWS;
 int cellWidth = screenWidth / COLS;
 
-int minefound = 0;
 
+int revealed;
 struct Cell{
     int i;
     int j;
@@ -41,7 +41,6 @@ int CellCountMines(int, int);
 void CellReveal(int, int);
 void CellFlag(int, int);
 void GameInit(void);
-void PlaceMines();
 
 int main() 
 {
@@ -52,15 +51,7 @@ int main()
     GameInit();
 
 
-    for(int i = 0; i < COLS; i++) //set grid
-    {
-        for (int j = 0; j < ROWS; j++)
-        {
-            if(!grid[i][j].haveMine)
-                grid[i][j].neighbor = CellCountMines(i , j);
-        };
-    }
-    
+
 
     while (!WindowShouldClose())
     {
@@ -110,8 +101,8 @@ int main()
             if (state == WIN)
             {
                 DrawRectangle(0,0,screenWidth,screenHeight,endgame);
-                DrawText(youwin, screenWidth/2 - MeasureText(youwin, 40), screenHeight/2 - 40,40,DARKGRAY);
-                DrawText(restart, screenWidth/2 - MeasureText(restart, 40), screenHeight/2 ,40,DARKGRAY);
+                DrawText(youwin, (screenWidth - MeasureText(youwin, 40))/2, screenHeight/2 - 40,40,DARKGRAY);
+                DrawText(restart, (screenWidth - MeasureText(restart, 40))/2, screenHeight/2 ,40,DARKGRAY);
             }
 
         EndDrawing();
@@ -144,7 +135,7 @@ void CellDraw(Cell cell)
     }
     else if (cell.flag)
     {
-        DrawText(flag, cell.i * cellWidth + 15, cell.j * cellHeight + 25, 20, RAYWHITE);
+        DrawText(flag, cell.i * cellWidth + 9, cell.j * cellHeight + 25, 18, RAYWHITE);
     }
     DrawRectangleLines(cell.i * cellWidth, cell.j * cellHeight, cellWidth, cellHeight, WHITE);
     
@@ -166,6 +157,29 @@ void GridInit()
             };
         }
     }
+
+    int minePlaced = 0;
+    while(minePlaced < NUM_MINE)
+    {
+        int i = rand() % COLS;
+        int j = rand() % ROWS;
+        if (grid[i][j].haveMine == false)
+        {
+            grid[i][j].haveMine = true;
+            minePlaced++;
+        }
+
+    }
+
+    for(int i = 0; i < COLS; i++) // count neighbor
+    {
+        for (int j = 0; j < ROWS; j++)
+        {
+            if(!grid[i][j].haveMine)
+                grid[i][j].neighbor = CellCountMines(i , j);
+        }
+    }
+    
 
 }
 bool IndexIsValid(int i, int j)
@@ -200,21 +214,7 @@ int CellCountMines(int i, int j)
     
 }
 
-void PlaceMines()
-{
-    int minePlaced = 0;
-    while(minePlaced < NUM_MINE)
-    {
-        int i = rand() % COLS;
-        int j = rand() % ROWS;
-        if (grid[i][j].haveMine == false)
-        {
-            grid[i][j].haveMine = true;
-            minePlaced++;
-        }
 
-    }
-}
 
 void CellReveal(int i, int j)
 {
@@ -229,6 +229,14 @@ void CellReveal(int i, int j)
     {
         state = LOSE;
     }
+    else
+    {
+        revealed++;
+        if(revealed == ROWS*COLS - NUM_MINE)
+        {
+            state = WIN;
+        }
+    }
 
 }
 
@@ -241,12 +249,6 @@ void CellFlag(int i, int j)
     }
     grid[i][j].flag = !grid[i][j].flag;
 
-    if (grid[i][j].haveMine == true)
-    {
-        minefound++;
-    }
-
-    if(minefound == NUM_MINE) state = WIN;    
 
 };
 
@@ -254,6 +256,6 @@ void GameInit()
 {
     srand(time(0));
     GridInit();
-    PlaceMines();
     state = PLAYING;
+    revealed =0;
 }
